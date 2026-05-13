@@ -1,0 +1,131 @@
+<canvas id="rain-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+<script>
+  class RainDrop {
+    x: number;
+    y: number;
+    length: number;
+    speed: number;
+    opacity: number;
+    width: number;
+    canvasW: number;
+    canvasH: number;
+
+    constructor(w: number, h: number) {
+      this.canvasW = w;
+      this.canvasH = h;
+      this.reset();
+    }
+
+    reset() {
+      this.x = Math.random() * this.canvasW;
+      this.y = Math.random() * this.canvasH - this.canvasH;
+      this.length = Math.random() * 20 + 8;
+      this.speed = Math.random() * 4 + 3;
+      this.opacity = Math.random() * 0.35 + 0.1;
+      this.width = Math.random() * 1.5 + 0.5;
+    }
+
+    fall() {
+      this.y += this.speed;
+      if (this.y > this.canvasH + 20) {
+        this.reset();
+      }
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.x - 0.5, this.y - this.length);
+      ctx.strokeStyle = `rgba(180, 200, 255, ${this.opacity})`;
+      ctx.lineWidth = this.width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+  }
+
+  class Splash {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    maxLife: number;
+    size: number;
+
+    constructor(x: number, y: number) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 3;
+      this.vy = -Math.random() * 2 - 1;
+      this.life = 0;
+      this.maxLife = Math.random() * 15 + 10;
+      this.size = Math.random() * 1.5 + 0.5;
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += 0.05;
+      this.life++;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+      const alpha = 1 - this.life / this.maxLife;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180, 200, 255, ${alpha * 0.3})`;
+      ctx.fill();
+    }
+
+    get dead() {
+      return this.life >= this.maxLife;
+    }
+  }
+
+  const canvas = document.getElementById('rain-canvas') as HTMLCanvasElement;
+  if (!canvas) throw new Error('Canvas not found');
+
+  const ctx = canvas.getContext('2d')!;
+  let drops: RainDrop[] = [];
+  let splashes: Splash[] = [];
+  let animId: number;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    drops = [];
+    const count = Math.floor((canvas.width * canvas.height) / 6000);
+    for (let i = 0; i < count; i++) {
+      drops.push(new RainDrop(canvas.width, canvas.height));
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const drop of drops) {
+      drop.fall();
+      drop.draw(ctx);
+      if (drop.y > canvas.height - 10 && Math.random() < 0.02) {
+        splashes.push(new Splash(drop.x, canvas.height - 5));
+      }
+    }
+
+    splashes = splashes.filter(s => {
+      s.update();
+      s.draw(ctx);
+      return !s.dead;
+    });
+
+    if (splashes.length > 200) {
+      splashes.splice(0, splashes.length - 200);
+    }
+
+    animId = requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  animate();
+</script>

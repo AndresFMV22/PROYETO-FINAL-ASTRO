@@ -1,0 +1,9 @@
+name = "liquidsky-ecommerce"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "./dist"
+
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+PUBLIC_SUPABASE_URL = "https://xmfdnezmpmsjtmcutwqu.supabase.co"
+PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtZmRuZXptcG1zanRtY3V0d3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2OTE0MDIsImV4cCI6MjA5NDI2NzQwMn0.pezRs8BMaqNN4gFxAgovO4c57HwsLUXKdHS290p90OM"

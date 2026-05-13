@@ -1,0 +1,13 @@
+---
+interface Props {
+  className?: string;
+  count?: number;
+}
+
+const { className = "", count = 3 } = Astro.props;
+const items = Array.from({ length: count });
+---
+
+{items.map(() => (
+  <div class={`skeleton-pulse ${className}`}></div>
+))}

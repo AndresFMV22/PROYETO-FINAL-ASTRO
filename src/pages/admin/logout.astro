@@ -1,0 +1,8 @@
+---
+import { getSupabase } from '../../lib/supabase';
+
+const supabase = getSupabase(Astro.cookies);
+await supabase.auth.signOut();
+
+return Astro.redirect('/login');
+---

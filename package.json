@@ -1,0 +1,25 @@
+{
+  "name": "liquidsky-ecommerce",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.1.0",
+    "@astrojs/tailwind": "^5.1.4",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.47.10",
+    "astro": "^5.1.1",
+    "tailwindcss": "^3.4.17",
+    "lucide-react": "^0.469.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
