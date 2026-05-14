@@ -57,7 +57,7 @@ const stockOut = stock === 0;
     const { average, count } = getAverageRating('{id}');
     if (count > 0) {
       const full = Math.round(average);
-      badgeEl.innerHTML = `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] text-amber-400 font-bold">${'\\u2605'.repeat(full)}${'\\u2606'.repeat(5-full)}</span>`;
+      badgeEl.innerHTML = `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] text-amber-400 font-bold">${'\u2605'.repeat(full)}${'\u2606'.repeat(5-full)}</span>`;
     }
   }
 </script>
