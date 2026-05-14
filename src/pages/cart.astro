@@ -23,7 +23,80 @@ import Layout from '../layouts/Layout.astro';
           <p class="text-white/40 text-xs uppercase tracking-wider font-medium">Total</p>
           <p class="text-3xl font-bold text-gradient-primary" id="cart-total">$0.00</p>
         </div>
-        <button onclick="clearCart()" class="btn-glass px-5 py-2.5 rounded-lg text-xs text-red-400/70 hover:text-red-400">Vaciar carrito</button>
+        <div class="flex items-center gap-3">
+          <button onclick="clearCart()" class="btn-glass px-5 py-2.5 rounded-lg text-xs text-red-400/70 hover:text-red-400">Vaciar carrito</button>
+          <button onclick="showPayment()" class="btn-primary px-5 py-2.5 rounded-lg text-xs">Proceder al pago</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-overlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="hidePayment()"></div>
+      <div class="glass-strong rounded-2xl p-6 md:p-8 w-full max-w-md relative z-10 animate-slide-up">
+        <button onclick="hidePayment()" class="absolute top-4 right-4 text-white/30 hover:text-white/60 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+
+        <div id="payment-form">
+          <div class="text-center mb-6">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg shadow-primary/30">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <h2 class="text-lg font-bold text-white/90">Pago seguro</h2>
+            <p class="text-white/30 text-xs mt-0.5">Completa tus datos para procesar el pago</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-white/40 mb-1.5">Nombre del titular</label>
+              <input type="text" id="card-name" class="input-glass" placeholder="Juan Pérez" autocomplete="off" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-white/40 mb-1.5">Número de tarjeta</label>
+              <input type="text" id="card-number" class="input-glass" placeholder="4242 4242 4242 4242" maxlength="19" autocomplete="off" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-white/40 mb-1.5">Fecha de expiración</label>
+                <input type="text" id="card-expiry" class="input-glass" placeholder="MM/AA" maxlength="5" autocomplete="off" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-white/40 mb-1.5">CVV</label>
+                <input type="text" id="card-cvv" class="input-glass" placeholder="123" maxlength="4" autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-white/25 text-xs pt-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Pago simulado — sin cargo real</span>
+            </div>
+
+            <div id="payment-error" class="text-xs p-3 rounded-lg bg-red-500/10 text-red-400 border border-red-500/15 hidden"></div>
+
+            <button id="pay-btn" onclick="processPayment()" class="btn-primary w-full py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4v4h8V6a4 4 0 0 0-4-4Z"/><path d="M2 12h20v4a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-4Z"/><path d="M6 16v-2"/><path d="M18 16v-2"/></svg>
+              Pagar <span id="pay-amount"></span>
+            </button>
+          </div>
+        </div>
+
+        <div id="payment-success" class="hidden text-center py-6">
+          <div class="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-white/90 mb-1">¡Pago exitoso! 🎉</h2>
+          <p class="text-white/40 text-sm mb-6">Tu pedido ha sido confirmado correctamente.</p>
+          <div class="glass rounded-xl p-4 mb-6 text-left space-y-1.5">
+            <p class="text-xs text-white/30">Resumen del pedido</p>
+            <div id="success-items" class="text-sm text-white/70 space-y-1"></div>
+            <div class="border-t border-white/[0.06] pt-2 mt-2 flex justify-between">
+              <span class="text-xs text-white/40">Total pagado</span>
+              <span class="text-sm font-bold text-gradient-primary" id="success-total"></span>
+            </div>
+          </div>
+          <a href="/" class="btn-primary px-6 py-2.5 rounded-lg text-sm">Volver al catálogo</a>
+        </div>
       </div>
     </div>
   </div>
@@ -102,6 +175,112 @@ import Layout from '../layouts/Layout.astro';
       clearCartFn();
       render();
     };
+
+    // --- Payment ---
+
+    (window as any).showPayment = () => {
+      const overlay = document.getElementById('payment-overlay');
+      const amountEl = document.getElementById('pay-amount');
+      const formEl = document.getElementById('payment-form');
+      const successEl = document.getElementById('payment-success');
+      const errorEl = document.getElementById('payment-error');
+
+      overlay?.classList.remove('hidden');
+      formEl?.classList.remove('hidden');
+      successEl?.classList.add('hidden');
+      errorEl?.classList.add('hidden');
+
+      if (amountEl) {
+        amountEl.textContent = `$${getTotalPrice().toFixed(2)}`;
+      }
+
+      (document.getElementById('card-name') as HTMLInputElement).value = '';
+      (document.getElementById('card-number') as HTMLInputElement).value = '';
+      (document.getElementById('card-expiry') as HTMLInputElement).value = '';
+      (document.getElementById('card-cvv') as HTMLInputElement).value = '';
+
+      const payBtn = document.getElementById('pay-btn') as HTMLButtonElement;
+      if (payBtn) payBtn.disabled = false;
+    };
+
+    (window as any).hidePayment = () => {
+      document.getElementById('payment-overlay')?.classList.add('hidden');
+    };
+
+    // Format card number with spaces
+    document.getElementById('card-number')?.addEventListener('input', (e) => {
+      const input = e.target as HTMLInputElement;
+      let val = input.value.replace(/\D/g, '').substring(0, 16);
+      val = val.replace(/(\d{4})(?=\d)/g, '$1 ');
+      input.value = val;
+    });
+
+    // Format expiry
+    document.getElementById('card-expiry')?.addEventListener('input', (e) => {
+      const input = e.target as HTMLInputElement;
+      let val = input.value.replace(/\D/g, '').substring(0, 4);
+      if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
+      input.value = val;
+    });
+
+    // CVV only numbers
+    document.getElementById('card-cvv')?.addEventListener('input', (e) => {
+      const input = e.target as HTMLInputElement;
+      input.value = input.value.replace(/\D/g, '').substring(0, 4);
+    });
+
+    (window as any).processPayment = async () => {
+      const name = (document.getElementById('card-name') as HTMLInputElement).value.trim();
+      const number = (document.getElementById('card-number') as HTMLInputElement).value.replace(/\s/g, '');
+      const expiry = (document.getElementById('card-expiry') as HTMLInputElement).value.trim();
+      const cvv = (document.getElementById('card-cvv') as HTMLInputElement).value.trim();
+      const errorEl = document.getElementById('payment-error');
+      const payBtn = document.getElementById('pay-btn') as HTMLButtonElement;
+
+      errorEl?.classList.add('hidden');
+
+      if (!name) { showError('Ingresa el nombre del titular'); return; }
+      if (number.length < 16) { showError('Ingresa un número de tarjeta válido'); return; }
+      if (expiry.length < 5) { showError('Ingresa una fecha de expiración válida'); return; }
+      if (cvv.length < 3) { showError('Ingresa un CVV válido'); return; }
+
+      if (payBtn) {
+        payBtn.disabled = true;
+        payBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Procesando pago...';
+      }
+
+      await new Promise(r => setTimeout(r, 2000));
+
+      const items = getItems();
+      const total = getTotalPrice();
+      const formEl = document.getElementById('payment-form');
+      const successEl = document.getElementById('payment-success');
+      const successItemsEl = document.getElementById('success-items');
+      const successTotalEl = document.getElementById('success-total');
+
+      formEl?.classList.add('hidden');
+      successEl?.classList.remove('hidden');
+
+      if (successItemsEl) {
+        successItemsEl.innerHTML = items.map(i =>
+          `<div class="flex justify-between"><span>${i.title} × ${i.quantity}</span><span>$${(i.price * i.quantity).toFixed(2)}</span></div>`
+        ).join('');
+      }
+      if (successTotalEl) successTotalEl.textContent = `$${total.toFixed(2)}`;
+
+      clearCartFn();
+      render();
+
+      if (payBtn) payBtn.innerHTML = 'Pagado';
+    };
+
+    function showError(msg: string) {
+      const el = document.getElementById('payment-error');
+      if (el) {
+        el.textContent = msg;
+        el.classList.remove('hidden');
+      }
+    }
 
     addEventListener('cart-update', render);
     render();
