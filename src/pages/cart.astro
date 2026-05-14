@@ -102,7 +102,7 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <script>
-    import { getItems, removeItem, updateQuantity, clearCart as clearCartFn, getTotalPrice } from '../lib/cart';
+    import { getItems, removeItem, updateQuantity, clearCart as clearCartFn, getTotalPrice, addOrder } from '../lib/cart';
 
     function render() {
       const items = getItems();
@@ -268,6 +268,7 @@ import Layout from '../layouts/Layout.astro';
       }
       if (successTotalEl) successTotalEl.textContent = `$${total.toFixed(2)}`;
 
+      addOrder(items, total, name);
       clearCartFn();
       render();
 

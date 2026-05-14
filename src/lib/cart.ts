@@ -6,12 +6,21 @@ export interface CartItem {
   quantity: number;
 }
 
-const STORAGE_KEY = 'liquidsky-cart';
+export interface Order {
+  id: string;
+  items: CartItem[];
+  total: number;
+  date: string;
+  cardholderName: string;
+}
+
+const CART_KEY = 'liquidsky-cart';
+const ORDERS_KEY = 'liquidsky-orders';
 
 function getItems(): CartItem[] {
   if (typeof localStorage === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(CART_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -19,7 +28,7 @@ function getItems(): CartItem[] {
 }
 
 function save(items: CartItem[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(CART_KEY, JSON.stringify(items));
   dispatchEvent(new CustomEvent('cart-update'));
 }
 
@@ -56,8 +65,33 @@ export function getTotalPrice(): number {
 }
 
 export function clearCart(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(CART_KEY);
   dispatchEvent(new CustomEvent('cart-update'));
 }
 
 export { getItems };
+
+// --- Orders ---
+
+export function addOrder(items: CartItem[], total: number, cardholderName: string): void {
+  const orders = getOrders();
+  orders.unshift({
+    id: crypto.randomUUID(),
+    items: items.map(i => ({ ...i })),
+    total,
+    date: new Date().toISOString(),
+    cardholderName,
+  });
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  dispatchEvent(new CustomEvent('orders-update'));
+}
+
+export function getOrders(): Order[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(ORDERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
