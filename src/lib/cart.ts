@@ -1,0 +1,63 @@
+export interface CartItem {
+  id: string;
+  title: string;
+  price: number;
+  imageUrl: string | null;
+  quantity: number;
+}
+
+const STORAGE_KEY = 'liquidsky-cart';
+
+function getItems(): CartItem[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function save(items: CartItem[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  dispatchEvent(new CustomEvent('cart-update'));
+}
+
+export function addItem(item: Omit<CartItem, 'quantity'>): void {
+  const items = getItems();
+  const existing = items.find(i => i.id === item.id);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    items.push({ ...item, quantity: 1 });
+  }
+  save(items);
+}
+
+export function removeItem(id: string): void {
+  const items = getItems().filter(i => i.id !== id);
+  save(items);
+}
+
+export function updateQuantity(id: string, quantity: number): void {
+  if (quantity <= 0) return removeItem(id);
+  const items = getItems();
+  const item = items.find(i => i.id === id);
+  if (item) item.quantity = quantity;
+  save(items);
+}
+
+export function getTotalItems(): number {
+  return getItems().reduce((sum, i) => sum + i.quantity, 0);
+}
+
+export function getTotalPrice(): number {
+  return getItems().reduce((sum, i) => sum + i.price * i.quantity, 0);
+}
+
+export function clearCart(): void {
+  localStorage.removeItem(STORAGE_KEY);
+  dispatchEvent(new CustomEvent('cart-update'));
+}
+
+export { getItems };
