@@ -17,7 +17,7 @@ const { data: related } = await supabase
   .neq('id', product.id)
   .limit(4);
 
-const stock = Math.floor(Math.random() * 15) + 1;
+const stock = product.stock ?? Math.floor(Math.random() * 15) + 1;
 const lowStock = stock <= 3;
 const outOfStock = stock === 0;
 const outOfStockAttr = outOfStock;
@@ -103,7 +103,7 @@ const outOfStockAttr = outOfStock;
         <h2 class="text-lg font-bold text-white/80 mb-4">Productos relacionados</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {related.map(r => (
-            <ProductCard id={r.id} title={r.title} price={r.price} imageUrl={r.image_url} category={r.category} />
+            <ProductCard id={r.id} title={r.title} price={r.price} imageUrl={r.image_url} category={r.category} stock={r.stock ?? 10} />
           ))}
         </div>
       </div>
@@ -116,11 +116,12 @@ const outOfStockAttr = outOfStock;
     import { addReview, getReviewsForProduct, getAverageRating } from '../../lib/reviews';
     import { getSession } from '../../lib/auth';
 
-    const productId = '{product.id}';
-    const productTitle = '{product.title.replace(/'/g, "\\'")}';
-    const productPrice = {product.price};
-    const productImage = '{product.image_url || ''}';
-    const productCategory = '{product.category}';
+    const productData = JSON.parse('{JSON.stringify({ id: product.id, title: product.title, price: product.price, image_url: product.image_url, category: product.category })}');
+    const productId = productData.id;
+    const productTitle = productData.title;
+    const productPrice = productData.price;
+    const productImage = productData.image_url || '';
+    const productCategory = productData.category;
     const isOutOfStock = {outOfStockAttr};
 
     let selectedStar = 0;

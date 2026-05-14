@@ -12,7 +12,10 @@ export interface Order {
   total: number;
   date: string;
   cardholderName: string;
+  status?: string;
 }
+
+const STATUSES = ['Confirmado', 'En preparacion', 'Enviado', 'Entregado'];
 
 const CART_KEY = 'liquidsky-cart';
 const ORDERS_KEY = 'liquidsky-orders';
@@ -81,10 +84,23 @@ export function addOrder(items: CartItem[], total: number, cardholderName: strin
     total,
     date: new Date().toISOString(),
     cardholderName,
+    status: 'Confirmado',
   });
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
   dispatchEvent(new CustomEvent('orders-update'));
 }
+
+export function updateOrderStatus(orderId: string, status: string): void {
+  const orders = getOrders();
+  const order = orders.find(o => o.id === orderId);
+  if (order && STATUSES.includes(status)) {
+    order.status = status;
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    dispatchEvent(new CustomEvent('orders-update'));
+  }
+}
+
+export { STATUSES };
 
 export function getOrders(): Order[] {
   if (typeof localStorage === 'undefined') return [];

@@ -5,9 +5,12 @@ interface Props {
   price: number;
   imageUrl?: string;
   category: string;
+  stock?: number;
 }
 
-const { id, title, price, imageUrl, category } = Astro.props;
+const { id, title, price, imageUrl, category, stock = 10 } = Astro.props;
+const stockLow = stock <= 3;
+const stockOut = stock === 0;
 ---
 
 <a
@@ -32,6 +35,12 @@ const { id, title, price, imageUrl, category } = Astro.props;
       {category}
     </div>
     <div id="card-badge-{id}" class="absolute top-3 left-3">
+      <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border
+        class:list={[
+          stockOut ? 'bg-red-500/15 text-red-400 border-red-500/20' : stockLow ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-green-500/15 text-green-400 border-green-500/20'
+        ]}">
+        {stockOut ? 'Agotado' : stockLow ? `Quedan ${stock}` : stock}
+      </span>
     </div>
   </div>
   <div class="p-4">

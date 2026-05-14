@@ -19,12 +19,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <th class="p-3 font-medium">Nombre</th>
           <th class="p-3 font-medium">Categoría</th>
           <th class="p-3 font-medium text-right">Precio</th>
+          <th class="p-3 font-medium text-center w-20">Stock</th>
           <th class="p-3 font-medium text-center w-28">Acciones</th>
         </tr>
       </thead>
       <tbody id="products-table-body" class="text-sm divide-y divide-white/[0.03]">
         <tr>
-          <td colspan="5" class="p-10 text-center text-white/25">
+          <td colspan="6" class="p-10 text-center text-white/25">
             <div class="flex flex-col items-center gap-2">
               <div class="skeleton-pulse w-6 h-6 rounded-full"></div>
               Cargando productos...
@@ -52,12 +53,12 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       if (!tbody) return;
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-400 bg-red-500/5">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400 bg-red-500/5">Error: ${error.message}</td></tr>`;
         return;
       }
 
       if (products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-white/30">No hay productos. ¡Crea el primero!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-white/30">No hay productos. ¡Crea el primero!</td></tr>`;
         return;
       }
 
@@ -73,6 +74,9 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <td class="p-3 font-medium text-white/70 text-sm">${p.title}</td>
           <td class="p-3"><span class="tag text-[10px]">${p.category}</span></td>
           <td class="p-3 font-semibold text-white text-right text-sm">$${parseFloat(p.price).toFixed(2)}</td>
+          <td class="p-3 text-center">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${(p.stock ?? 10) === 0 ? 'bg-red-500/15 text-red-400 border border-red-500/20' : (p.stock ?? 10) <= 3 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20' : 'bg-green-500/15 text-green-400 border border-green-500/20'}">${p.stock ?? 10}</span>
+          </td>
           <td class="p-3 text-center">
             <div class="flex items-center justify-center gap-1">
               <a href="/admin/products/edit/${p.id}" class="p-1.5 rounded-lg text-primary-light/70 hover:text-primary-light hover:bg-primary/10 transition-all" title="Editar">
