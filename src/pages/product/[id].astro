@@ -111,7 +111,7 @@ const outOfStockAttr = outOfStock;
     )}
   </div>
 
-  <script is:inline>window.__productData = {JSON.stringify({ id: product.id, title: product.title, price: product.price, image_url: product.image_url, category: product.category })};window.__isOutOfStock = {outOfStockAttr};</script>
+  <div id="product-data" data-product="{encodeURIComponent(JSON.stringify({ id: product.id, title: product.title, price: product.price, image_url: product.image_url, category: product.category, isOutOfStock: outOfStockAttr }))}" hidden></div>
 
   <script>
     import { addItem } from '../../lib/cart';
@@ -119,13 +119,13 @@ const outOfStockAttr = outOfStock;
     import { addReview, getReviewsForProduct, getAverageRating } from '../../lib/reviews';
     import { getSession } from '../../lib/auth';
 
-    const productData = window.__productData;
+    const productData = JSON.parse(decodeURIComponent(document.getElementById('product-data').dataset.product));
     const productId = productData.id;
     const productTitle = productData.title;
     const productPrice = productData.price;
     const productImage = productData.image_url || '';
     const productCategory = productData.category;
-    const isOutOfStock = window.__isOutOfStock;
+    const isOutOfStock = productData.isOutOfStock;
 
     let selectedStar = 0;
 
