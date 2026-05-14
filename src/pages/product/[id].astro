@@ -21,6 +21,9 @@ const stock = product.stock ?? Math.floor(Math.random() * 15) + 1;
 const lowStock = stock <= 3;
 const outOfStock = stock === 0;
 const outOfStockAttr = outOfStock;
+
+const rawJson = JSON.stringify({ id: product.id, title: product.title, price: product.price, image_url: product.image_url, category: product.category });
+const safeJson = rawJson.replace(/[\\']/g, '\\$&');
 ---
 
 <Layout title={product.title}>
@@ -110,15 +113,13 @@ const outOfStockAttr = outOfStock;
     )}
   </div>
 
-  <div id="product-data" hidden>{JSON.stringify({ id: product.id, title: product.title, price: product.price, image_url: product.image_url, category: product.category })}</div>
-
   <script>
     import { addItem } from '../../lib/cart';
     import { toggleItem, isInWishlist } from '../../lib/wishlist';
     import { addReview, getReviewsForProduct, getAverageRating } from '../../lib/reviews';
     import { getSession } from '../../lib/auth';
 
-    const productData = JSON.parse(document.getElementById('product-data').textContent);
+    const productData = JSON.parse('{safeJson}');
     const productId = productData.id;
     const productTitle = productData.title;
     const productPrice = productData.price;
