@@ -1,11 +1,9 @@
 <div class="ambient-bg" aria-hidden="true">
-  <!-- Big vibrant orbs -->
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
   <div class="orb orb-4"></div>
 
-  <!-- Floating ecommerce icons -->
   <svg class="float-icon icon-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
     <line x1="3" y1="6" x2="21" y2="6"/>
@@ -60,7 +58,7 @@
   </svg>
 </div>
 
-<style>
+<style is:global>
   .ambient-bg {
     position: fixed;
     inset: 0;
@@ -79,170 +77,181 @@
   }
 
   .orb-1 {
-    width: 600px;
-    height: 600px;
-    top: -15%;
-    right: -10%;
+    width: 600px; height: 600px;
+    top: -15%; right: -10%;
     background: radial-gradient(circle, rgba(124, 58, 237, 0.2), transparent 70%);
-    animation: orbMove1 30s ease-in-out infinite;
+    animation: orbMove1 25s ease-in-out infinite;
   }
-
   .orb-2 {
-    width: 500px;
-    height: 500px;
-    bottom: -10%;
-    left: -8%;
+    width: 500px; height: 500px;
+    bottom: -10%; left: -8%;
     background: radial-gradient(circle, rgba(236, 72, 153, 0.15), transparent 70%);
-    animation: orbMove2 35s ease-in-out infinite;
+    animation: orbMove2 30s ease-in-out infinite;
   }
-
   .orb-3 {
-    width: 350px;
-    height: 350px;
-    top: 30%;
-    left: 40%;
+    width: 350px; height: 350px;
+    top: 30%; left: 40%;
     background: radial-gradient(circle, rgba(245, 158, 11, 0.1), transparent 70%);
-    animation: orbMove3 25s ease-in-out infinite;
+    animation: orbMove3 20s ease-in-out infinite;
   }
-
   .orb-4 {
-    width: 400px;
-    height: 400px;
-    top: 50%;
-    right: 20%;
+    width: 400px; height: 400px;
+    top: 50%; right: 20%;
     background: radial-gradient(circle, rgba(236, 72, 153, 0.1), transparent 70%);
-    animation: orbMove4 40s ease-in-out infinite;
+    animation: orbMove4 35s ease-in-out infinite;
   }
 
   @keyframes orbMove1 {
     0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-60px, 80px); }
-    50% { transform: translate(50px, -40px); }
-    75% { transform: translate(-30px, 60px); }
+    25% { transform: translate(-80px, 100px); }
+    50% { transform: translate(60px, -50px); }
+    75% { transform: translate(-40px, 70px); }
   }
-
   @keyframes orbMove2 {
     0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(80px, -50px); }
-    66% { transform: translate(-40px, 70px); }
+    33% { transform: translate(100px, -60px); }
+    66% { transform: translate(-50px, 90px); }
   }
-
   @keyframes orbMove3 {
     0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(-50px, 30px) scale(1.1); }
+    50% { transform: translate(-60px, 40px) scale(1.15); }
   }
-
   @keyframes orbMove4 {
     0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(40px, 40px); }
-    50% { transform: translate(-60px, -30px); }
-    75% { transform: translate(30px, -50px); }
+    25% { transform: translate(50px, 50px); }
+    50% { transform: translate(-70px, -40px); }
+    75% { transform: translate(40px, -60px); }
   }
 
   .float-icon {
     position: absolute;
-    opacity: 0.08;
-    width: 32px;
-    height: 32px;
+    width: 28px; height: 28px;
     will-change: transform;
   }
 
   .icon-bag {
-    top: 12%;
-    left: 8%;
-    width: 36px; height: 36px;
-    color: #a78bfa;
-    opacity: 0.1;
-    animation: drift1 40s linear infinite;
+    top: 15%; left: 10%;
+    width: 34px; height: 34px;
+    color: #a78bfa; opacity: 0.2;
+    animation: floatBag 12s ease-in-out infinite;
+  }
+  @keyframes floatBag {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(120px, -80px) rotate(15deg); }
+    50% { transform: translate(-60px, 60px) rotate(-10deg); }
+    75% { transform: translate(80px, 40px) rotate(8deg); }
   }
 
   .icon-tag {
-    top: 65%;
-    left: 5%;
-    width: 28px; height: 28px;
-    color: #f472b6;
-    opacity: 0.08;
-    animation: drift2 35s linear infinite;
+    top: 70%; left: 3%;
+    color: #f472b6; opacity: 0.18;
+    animation: floatTag 10s ease-in-out infinite;
+  }
+  @keyframes floatTag {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(-80px, -60px) rotate(-20deg) scale(1.2); }
+    66% { transform: translate(100px, 40px) rotate(15deg) scale(0.9); }
   }
 
   .icon-box {
-    top: 20%;
-    right: 12%;
-    width: 40px; height: 40px;
-    color: #fbbf24;
-    opacity: 0.09;
-    animation: drift3 45s linear infinite;
+    top: 20%; right: 15%;
+    width: 36px; height: 36px;
+    color: #fbbf24; opacity: 0.18;
+    animation: floatBox 14s ease-in-out infinite;
+  }
+  @keyframes floatBox {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(-100px, -100px) rotate(180deg); }
   }
 
   .icon-cart {
-    top: 75%;
-    right: 8%;
-    width: 34px; height: 34px;
-    color: #a78bfa;
-    opacity: 0.08;
-    animation: drift4 50s linear infinite;
+    top: 80%; right: 5%;
+    width: 32px; height: 32px;
+    color: #a78bfa; opacity: 0.16;
+    animation: floatCart 11s ease-in-out infinite;
+  }
+  @keyframes floatCart {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-80px, -50px) rotate(-10deg); }
+    50% { transform: translate(60px, 30px) rotate(5deg); }
+    75% { transform: translate(-40px, -80px) rotate(-5deg); }
   }
 
   .icon-star {
-    top: 35%;
-    left: 3%;
-    width: 26px; height: 26px;
-    color: #fbbf24;
-    opacity: 0.09;
-    animation: drift1 55s linear infinite;
+    top: 40%; left: 2%;
+    color: #fbbf24; opacity: 0.2;
+    animation: floatStar 8s ease-in-out infinite;
+  }
+  @keyframes floatStar {
+    0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    50% { transform: translate(80px, -60px) scale(1.5) rotate(180deg); }
   }
 
   .icon-gift {
-    top: 10%;
-    right: 35%;
-    width: 30px; height: 30px;
-    color: #f472b6;
-    opacity: 0.07;
-    animation: drift2 38s linear infinite;
+    top: 8%; right: 30%;
+    color: #f472b6; opacity: 0.15;
+    animation: floatGift 13s ease-in-out infinite;
+  }
+  @keyframes floatGift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(60px, 80px) rotate(12deg); }
+    66% { transform: translate(-80px, -40px) rotate(-8deg); }
   }
 
   .icon-credit {
-    top: 50%;
-    left: 12%;
-    width: 36px; height: 36px;
-    color: #a78bfa;
-    opacity: 0.07;
-    animation: drift3 42s linear infinite;
+    top: 55%; left: 15%;
+    width: 34px; height: 34px;
+    color: #a78bfa; opacity: 0.15;
+    animation: floatCredit 15s ease-in-out infinite;
+  }
+  @keyframes floatCredit {
+    0%, 100% { transform: translate(0, 0) rotateY(0deg); }
+    50% { transform: translate(-60px, 80px) rotateY(180deg); }
   }
 
   .icon-sparkle {
-    top: 80%;
-    right: 25%;
-    width: 28px; height: 28px;
-    color: #fbbf24;
-    opacity: 0.1;
-    animation: drift4 48s linear infinite;
+    top: 85%; right: 30%;
+    color: #fbbf24; opacity: 0.2;
+    animation: floatSparkle 9s ease-in-out infinite;
+  }
+  @keyframes floatSparkle {
+    0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.2; }
+    50% { transform: translate(-60px, -50px) scale(1.8) rotate(180deg); opacity: 0.35; }
   }
 
   .icon-heart {
-    top: 25%;
-    right: 5%;
+    top: 30%; right: 3%;
     width: 24px; height: 24px;
-    color: #ec4899;
-    opacity: 0.09;
-    animation: drift1 52s linear infinite;
+    color: #ec4899; opacity: 0.18;
+    animation: floatHeart 11s ease-in-out infinite;
+  }
+  @keyframes floatHeart {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(60px, -40px) scale(1.3); }
+    50% { transform: translate(-40px, 30px) scale(0.9); }
+    75% { transform: translate(30px, -60px) scale(1.1); }
   }
 
   .icon-coin {
-    top: 60%;
-    right: 15%;
-    width: 32px; height: 32px;
-    color: #fbbf24;
-    opacity: 0.08;
-    animation: drift2 44s linear infinite;
+    top: 65%; right: 18%;
+    color: #fbbf24; opacity: 0.16;
+    animation: floatCoin 12s ease-in-out infinite;
+  }
+  @keyframes floatCoin {
+    0%, 100% { transform: translate(0, 0) rotateY(0deg); }
+    50% { transform: translate(80px, -40px) rotateY(360deg); }
   }
 
   .icon-store {
-    top: 40%;
-    right: 3%;
-    width: 34px; height: 34px;
-    color: #a78bfa;
-    opacity: 0.07;
-    animation: drift3 36s linear infinite;
+    top: 45%; right: 1%;
+    width: 32px; height: 32px;
+    color: #a78bfa; opacity: 0.14;
+    animation: floatStore 14s ease-in-out infinite;
+  }
+  @keyframes floatStore {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-40px, -50px) rotate(-5deg); }
+    50% { transform: translate(30px, 40px) rotate(5deg); }
+    75% { transform: translate(-50px, -30px) rotate(-3deg); }
   }
 </style>
