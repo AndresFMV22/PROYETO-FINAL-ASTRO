@@ -1,0 +1,81 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getSession } from '../lib/auth';
+---
+
+<Layout title="Crear Cuenta">
+  <div class="min-h-[70vh] flex items-center justify-center py-12">
+    <div class="w-full max-w-sm animate-slide-up">
+      <div class="glass-strong rounded-2xl p-7">
+        <div class="text-center mb-6">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg shadow-primary/30">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h2 class="text-xl font-semibold text-white/90">Crear cuenta</h2>
+          <p class="text-white/30 text-xs mt-0.5">Registrate para empezar a comprar</p>
+        </div>
+
+        <form id="signup-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-white/40 mb-1.5">Nombre completo</label>
+            <input type="text" id="signup-name" required class="input-glass" placeholder="Juan Perez" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-white/40 mb-1.5">Email</label>
+            <input type="email" id="signup-email" required class="input-glass" placeholder="correo@ejemplo.com" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-white/40 mb-1.5">Contraseña</label>
+            <input type="password" id="signup-password" required class="input-glass" placeholder="Min. 6 caracteres" minlength="6" />
+          </div>
+
+          <div id="signup-error" class="text-red-400 text-xs p-3 rounded-lg bg-red-500/10 border border-red-500/15 hidden"></div>
+          <div id="signup-success" class="text-green-400 text-xs p-3 rounded-lg bg-green-500/10 border border-green-500/15 hidden"></div>
+
+          <button type="submit" id="signup-btn" class="btn-primary w-full py-2.5 rounded-lg font-medium text-sm">
+            Crear cuenta
+          </button>
+        </form>
+
+        <p class="text-center text-xs text-white/30 mt-4">
+          ¿Ya tienes cuenta? <a href="/login" class="text-primary-light hover:text-white transition-colors">Inicia sesion</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { signup, getSession } from '../lib/auth';
+
+    if (getSession()) window.location.href = '/';
+
+    const form = document.getElementById('signup-form');
+    const btn = document.getElementById('signup-btn') as HTMLButtonElement;
+    const errorEl = document.getElementById('signup-error');
+    const successEl = document.getElementById('signup-success');
+
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      errorEl?.classList.add('hidden');
+      successEl?.classList.add('hidden');
+
+      const name = (document.getElementById('signup-name') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('signup-email') as HTMLInputElement).value.trim();
+      const password = (document.getElementById('signup-password') as HTMLInputElement).value;
+
+      if (!name || !email || !password) {
+        if (errorEl) { errorEl.textContent = 'Completa todos los campos'; errorEl.classList.remove('hidden'); }
+        return;
+      }
+
+      const result = signup(name, email, password);
+      if (result.ok) {
+        if (successEl) { successEl.textContent = 'Cuenta creada exitosamente. Redirigiendo...'; successEl.classList.remove('hidden'); }
+        if (btn) btn.disabled = true;
+        setTimeout(() => window.location.href = '/', 1200);
+      } else {
+        if (errorEl) { errorEl.textContent = result.error || 'Error al crear cuenta'; errorEl.classList.remove('hidden'); }
+      }
+    });
+  </script>
+</Layout>

@@ -31,8 +31,7 @@ const { id, title, price, imageUrl, category } = Astro.props;
     <div class="absolute top-3 right-3 tag">
       {category}
     </div>
-    <div class="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
-      <span class="text-xs text-white/70 font-medium">Ver detalle</span>
+    <div id="card-badge-{id}" class="absolute top-3 left-3">
     </div>
   </div>
   <div class="p-4">
@@ -40,3 +39,16 @@ const { id, title, price, imageUrl, category } = Astro.props;
     <p class="mt-1.5 text-lg font-semibold text-gradient-primary tracking-tight">${price.toFixed(2)}</p>
   </div>
 </a>
+
+<script>
+  import { getAverageRating } from '../lib/reviews';
+
+  const badgeEl = document.getElementById('card-badge-{id}');
+  if (badgeEl) {
+    const { average, count } = getAverageRating('{id}');
+    if (count > 0) {
+      const full = Math.round(average);
+      badgeEl.innerHTML = `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] text-amber-400 font-bold">${'\\u2605'.repeat(full)}${'\\u2606'.repeat(5-full)}</span>`;
+    }
+  }
+</script>
