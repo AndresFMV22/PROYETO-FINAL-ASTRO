@@ -63,7 +63,7 @@ nuevo-ecommerce/
     │
     ├── components/
     │   ├── ProductCard.astro   # Tarjeta de producto con efecto glass y hover animado
-    │   ├── RainBackground.astro # Lienzo canvas con animacion de lluvia y salpicaduras
+    │   ├── AmbientBackground.astro # Fondo animado con esferas de luz flotantes
     │   └── ui/
     │       └── Skeleton.astro  # Componente de carga esqueletico con shimmer
     │

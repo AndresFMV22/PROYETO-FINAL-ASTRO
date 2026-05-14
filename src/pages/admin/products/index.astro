@@ -3,30 +3,30 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 ---
 
 <AdminLayout title="Gestión de Productos">
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-    <p class="text-white/50 text-sm">Administra tu catálogo de productos</p>
-    <a href="/admin/products/new" class="btn-primary px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+    <p class="text-white/40 text-xs">Administra tu catálogo de productos</p>
+    <a href="/admin/products/new" class="btn-primary px-4 py-2 rounded-lg text-xs flex items-center gap-1.5">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
       Nuevo Producto
     </a>
   </div>
 
-  <div class="glass-strong rounded-2xl overflow-hidden">
+  <div class="glass-strong rounded-xl overflow-hidden">
     <table class="w-full text-left border-collapse min-w-[700px]">
       <thead>
-        <tr class="border-b border-white/5 text-white/40 text-sm">
-          <th class="p-4 font-semibold w-20">Imagen</th>
-          <th class="p-4 font-semibold">Nombre</th>
-          <th class="p-4 font-semibold">Categoría</th>
-          <th class="p-4 font-semibold text-right">Precio</th>
-          <th class="p-4 font-semibold text-center w-32">Acciones</th>
+        <tr class="border-b border-white/[0.04] text-white/30 text-xs">
+          <th class="p-3 font-medium w-16">Imagen</th>
+          <th class="p-3 font-medium">Nombre</th>
+          <th class="p-3 font-medium">Categoría</th>
+          <th class="p-3 font-medium text-right">Precio</th>
+          <th class="p-3 font-medium text-center w-28">Acciones</th>
         </tr>
       </thead>
-      <tbody id="products-table-body" class="text-sm divide-y divide-white/5">
+      <tbody id="products-table-body" class="text-sm divide-y divide-white/[0.03]">
         <tr>
-          <td colspan="5" class="p-12 text-center text-white/30">
-            <div class="flex flex-col items-center gap-3">
-              <div class="skeleton-pulse w-8 h-8 rounded-full"></div>
+          <td colspan="5" class="p-10 text-center text-white/25">
+            <div class="flex flex-col items-center gap-2">
+              <div class="skeleton-pulse w-6 h-6 rounded-full"></div>
               Cargando productos...
             </div>
           </td>
@@ -52,34 +52,34 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       if (!tbody) return;
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-400 bg-red-500/5">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-400 bg-red-500/5">Error: ${error.message}</td></tr>`;
         return;
       }
 
       if (products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-12 text-center text-white/30">No hay productos. ¡Crea el primero!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-white/30">No hay productos. ¡Crea el primero!</td></tr>`;
         return;
       }
 
       tbody.innerHTML = products.map(p => `
-        <tr class="hover:bg-white/[0.02] transition-colors">
-          <td class="p-4">
-            <div class="w-12 h-12 rounded-lg bg-white/5 overflow-hidden">
+        <tr class="hover:bg-white/[0.015] transition-colors">
+          <td class="p-3">
+            <div class="w-10 h-10 rounded-lg bg-white/[0.03] overflow-hidden">
               ${p.image_url
                 ? `<img src="${p.image_url}" alt="${p.title}" class="w-full h-full object-cover"/>`
-                : '<div class="w-full h-full flex items-center justify-center text-white/10"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>'}
+                : '<div class="w-full h-full flex items-center justify-center text-white/10"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>'}
             </div>
           </td>
-          <td class="p-4 font-medium text-white/80">${p.title}</td>
-          <td class="p-4"><span class="tag text-[10px]">${p.category}</span></td>
-          <td class="p-4 font-bold text-white text-right">$${parseFloat(p.price).toFixed(2)}</td>
-          <td class="p-4 text-center">
-            <div class="flex items-center justify-center gap-2">
-              <a href="/admin/products/edit/${p.id}" class="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-all" title="Editar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <td class="p-3 font-medium text-white/70 text-sm">${p.title}</td>
+          <td class="p-3"><span class="tag text-[10px]">${p.category}</span></td>
+          <td class="p-3 font-semibold text-white text-right text-sm">$${parseFloat(p.price).toFixed(2)}</td>
+          <td class="p-3 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <a href="/admin/products/edit/${p.id}" class="p-1.5 rounded-lg text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title="Editar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
               </a>
-              <button onclick="deleteProduct('${p.id}')" class="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all" title="Eliminar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              <button onclick="deleteProduct('${p.id}')" class="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Eliminar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
               </button>
             </div>
           </td>
