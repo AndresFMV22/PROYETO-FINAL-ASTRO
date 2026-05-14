@@ -16,6 +16,11 @@ const stockOut = stock === 0;
 <a
   href={`/product/${id}`}
   class="group glass-card block overflow-hidden animate-fade-in"
+  data-product-id={id}
+  data-product-title={title}
+  data-product-price={price}
+  data-product-image={imageUrl || ''}
+  data-product-category={category}
 >
   <div class="aspect-square w-full overflow-hidden relative">
     {imageUrl ? (
@@ -34,14 +39,18 @@ const stockOut = stock === 0;
     <div class="absolute top-3 right-3 tag">
       {category}
     </div>
-    <div id="card-badge-{id}" class="absolute top-3 left-3">
+    <div class="absolute top-3 left-3 flex gap-1.5 items-start">
       <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border
         class:list={[
           stockOut ? 'bg-red-500/15 text-red-400 border-red-500/20' : stockLow ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-green-500/15 text-green-400 border-green-500/20'
         ]}">
         {stockOut ? 'Agotado' : stockLow ? `Quedan ${stock}` : stock}
       </span>
+      <span class="rating-stars inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] text-amber-400 font-bold hidden"></span>
     </div>
+    <button data-wishlist-btn class="absolute bottom-3 right-3 w-8 h-8 rounded-lg glass flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100" type="button">
+      <svg data-wishlist-icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </button>
   </div>
   <div class="p-4">
     <h3 class="font-medium text-sm text-white/80 truncate group-hover:text-white transition-colors" title={title}>{title}</h3>
@@ -50,14 +59,87 @@ const stockOut = stock === 0;
 </a>
 
 <script>
+  import { toggleItem, isInWishlist } from '../lib/wishlist';
   import { getAverageRating } from '../lib/reviews';
+  import { createBrowserClient } from '@supabase/ssr';
 
-  const badgeEl = document.getElementById('card-badge-{id}');
-  if (badgeEl) {
-    const { average, count } = getAverageRating('{id}');
-    if (count > 0) {
-      const full = Math.round(average);
-      badgeEl.innerHTML = `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] text-amber-400 font-bold">${'\u2605'.repeat(full)}${'\u2606'.repeat(5-full)}</span>`;
+  const supabase = createBrowserClient(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  try {
+    const cards = document.querySelectorAll('[data-product-id]');
+    const ids = Array.from(cards).map(c => c.getAttribute('data-product-id') || '').filter(Boolean);
+
+    // Fetch live stock from Supabase
+    if (ids.length > 0) {
+      supabase.from('products').select('id, stock').in('id', ids).then(({ data }) => {
+        if (!data) return;
+        cards.forEach(card => {
+          const id = card.getAttribute('data-product-id') || '';
+          const dbStock = data.find(p => p.id === id)?.stock ?? 10;
+          const badge = card.querySelector('[class*="stock"]');
+          if (badge) {
+            const stockOut = dbStock === 0;
+            const stockLow = dbStock <= 3;
+            badge.textContent = stockOut ? 'Agotado' : stockLow ? `Quedan ${dbStock}` : dbStock.toString();
+            badge.className = badge.className
+              .replace(/bg-\w+-\d+\/\d+/g, '')
+              .replace(/text-\w+-\d+/g, '')
+              .replace(/border-\w+-\d+\/\d+/g, '') +
+              (stockOut ? ' bg-red-500/15 text-red-400 border-red-500/20' : stockLow ? ' bg-amber-500/15 text-amber-400 border-amber-500/20' : ' bg-green-500/15 text-green-400 border-green-500/20');
+          }
+        });
+      });
     }
+
+    cards.forEach(card => {
+      try {
+        const id = card.getAttribute('data-product-id') || '';
+        const title = card.getAttribute('data-product-title') || '';
+        const price = parseFloat(card.getAttribute('data-product-price') || '0');
+        const imageUrl = card.getAttribute('data-product-image') || '';
+        const category = card.getAttribute('data-product-category') || '';
+
+        // Wishlist button
+        const btn = card.querySelector('[data-wishlist-btn]');
+        const icon = card.querySelector('[data-wishlist-icon]');
+        if (btn && icon) {
+          if (isInWishlist(id)) {
+            icon.setAttribute('fill', '#ec4899');
+            icon.setAttribute('stroke', '#ec4899');
+          }
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleItem({ id, title, price, imageUrl, category });
+            if (isInWishlist(id)) {
+              icon.setAttribute('fill', '#ec4899');
+              icon.setAttribute('stroke', '#ec4899');
+            } else {
+              icon.setAttribute('fill', 'none');
+              icon.setAttribute('stroke', 'rgba(255,255,255,0.5)');
+            }
+            dispatchEvent(new CustomEvent('wishlist-update'));
+          });
+        }
+
+        // Rating stars
+        const { average, count } = getAverageRating(id);
+        if (count > 0) {
+          const full = Math.round(average);
+          const starsEl = card.querySelector('.rating-stars');
+          if (starsEl) {
+            starsEl.innerHTML = '\u2605'.repeat(full) + '\u2606'.repeat(5 - full);
+            starsEl.classList.remove('hidden');
+          }
+        }
+      } catch (e) {
+        console.error('[LiquidSky] Error en tarjeta producto:', e);
+      }
+    });
+  } catch (e) {
+    console.error('[LiquidSky] Error al inicializar tarjetas:', e);
   }
 </script>

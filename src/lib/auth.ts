@@ -15,6 +15,14 @@ export interface Session {
 const CUSTOMERS_KEY = 'liquidsky-customers';
 const SESSION_KEY = 'liquidsky-session';
 
+function generateId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+}
+
 function getCustomers(): Customer[] {
   if (typeof localStorage === 'undefined') return [];
   try {
@@ -33,7 +41,7 @@ export function signup(name: string, email: string, password: string): { ok: boo
     return { ok: false, error: 'Este email ya está registrado' };
   }
   const customer: Customer = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     name,
     email,
     password,
@@ -56,8 +64,9 @@ export function login(email: string, password: string): { ok: boolean; error?: s
 }
 
 export function logout(): void {
+  const session = getSession();
   localStorage.removeItem(SESSION_KEY);
-  dispatchEvent(new CustomEvent('session-update'));
+  dispatchEvent(new CustomEvent('session-update', { detail: { userId: session?.id } }));
 }
 
 function setSession(session: Session): void {

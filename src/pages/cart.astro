@@ -103,8 +103,34 @@ import Layout from '../layouts/Layout.astro';
 
   <script>
     import { getItems, removeItem, updateQuantity, clearCart as clearCartFn, getTotalPrice, addOrder } from '../lib/cart';
+    import { getSession } from '../lib/auth';
+    import { createBrowserClient } from '@supabase/ssr';
 
-    function render() {
+    const supabase = createBrowserClient(
+      import.meta.env.PUBLIC_SUPABASE_URL,
+      import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    const stockCache: Record<string, number> = {};
+
+    try {
+      const session = getSession();
+      const key = session?.id ? `liquidsky-cart-${session.id}` : 'liquidsky-cart';
+      console.log('[CartPage] Usuario:', session?.id || 'invitado', '| Key:', key);
+      console.log('[CartPage] Cart raw:', localStorage.getItem(key));
+      console.log('[CartPage] getItems() retorna:', JSON.stringify(getItems()));
+    } catch (_) {}
+
+    async function loadStock(items: { id: string }[]) {
+      const ids = items.map(i => i.id);
+      if (ids.length === 0) return;
+      const { data } = await supabase.from('products').select('id, stock').in('id', ids);
+      if (data) {
+        data.forEach(p => { stockCache[p.id] = p.stock ?? 10; });
+      }
+    }
+
+    async function render() {
       const items = getItems();
       const emptyEl = document.getElementById('cart-empty');
       const contentEl = document.getElementById('cart-content');
@@ -120,8 +146,13 @@ import Layout from '../layouts/Layout.astro';
       emptyEl?.classList.add('hidden');
       contentEl?.classList.remove('hidden');
 
+      await loadStock(items);
+
       if (itemsEl) {
-        itemsEl.innerHTML = items.map(item => `
+        itemsEl.innerHTML = items.map(item => {
+          const maxStock = stockCache[item.id] ?? 10;
+          const atMax = item.quantity >= maxStock;
+          return `
           <div class="glass-card p-4 flex items-center gap-4" data-id="${item.id}">
             <div class="w-16 h-16 rounded-xl bg-white/[0.03] overflow-hidden shrink-0">
               ${item.imageUrl
@@ -131,19 +162,20 @@ import Layout from '../layouts/Layout.astro';
             <div class="flex-1 min-w-0">
               <a href="/product/${item.id}" class="text-sm font-medium text-white/80 hover:text-white transition-colors truncate block">${item.title}</a>
               <p class="text-sm font-semibold text-gradient-primary mt-0.5">$${(item.price * item.quantity).toFixed(2)}</p>
+              <p class="text-[10px] text-white/20 mt-0.5">Stock: ${maxStock}${atMax ? ' <span class="text-amber-400">(max)</span>' : ''}</p>
             </div>
             <div class="flex items-center gap-2">
               <div class="flex items-center gap-1 bg-white/[0.04] rounded-lg p-0.5">
                 <button onclick="decQty('${item.id}')" class="w-7 h-7 rounded-md flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all text-sm">−</button>
                 <span class="w-6 text-center text-sm font-medium text-white/80">${item.quantity}</span>
-                <button onclick="incQty('${item.id}')" class="w-7 h-7 rounded-md flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all text-sm">+</button>
+                <button onclick="incQty('${item.id}')" ${atMax ? 'disabled' : ''} class="w-7 h-7 rounded-md flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all text-sm ${atMax ? 'opacity-30 cursor-not-allowed' : ''}">+</button>
               </div>
               <button onclick="removeItem('${item.id}')" class="p-1.5 rounded-lg text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
               </button>
             </div>
           </div>
-        `).join('');
+        `}).join('');
       }
 
       if (totalEl) {
@@ -154,7 +186,14 @@ import Layout from '../layouts/Layout.astro';
     (window as any).incQty = (id: string) => {
       const items = getItems();
       const item = items.find(i => i.id === id);
-      if (item) updateQuantity(id, item.quantity + 1);
+      if (item) {
+        const maxStock = stockCache[id] ?? 10;
+        if (item.quantity >= maxStock) {
+          showError(`Stock maximo disponible: ${maxStock}`);
+          return;
+        }
+        updateQuantity(id, item.quantity + 1);
+      }
       render();
     };
 
@@ -249,10 +288,31 @@ import Layout from '../layouts/Layout.astro';
         payBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Procesando pago...';
       }
 
-      await new Promise(r => setTimeout(r, 2000));
-
       const items = getItems();
       const total = getTotalPrice();
+
+      // Validar stock contra Supabase antes de procesar
+      const ids = items.map(i => i.id);
+      const { data: stockData } = await supabase.from('products').select('id, stock').in('id', ids);
+      if (stockData) {
+        for (const item of items) {
+          const dbStock = stockData.find(p => p.id === item.id)?.stock ?? 0;
+          if (item.quantity > dbStock) {
+            showError(`Stock insuficiente para "${item.title}". Disponible: ${dbStock}, en tu carrito: ${item.quantity}`);
+            if (payBtn) { payBtn.disabled = false; payBtn.innerHTML = 'Pagar <span id="pay-amount"></span>'; }
+            return;
+          }
+        }
+      }
+
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Decrementar stock en Supabase
+      for (const item of items) {
+        const current = stockData?.find(p => p.id === item.id)?.stock ?? 0;
+        await supabase.from('products').update({ stock: current - item.quantity }).eq('id', item.id);
+      }
+
       const formEl = document.getElementById('payment-form');
       const successEl = document.getElementById('payment-success');
       const successItemsEl = document.getElementById('success-items');

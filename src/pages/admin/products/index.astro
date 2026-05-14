@@ -46,7 +46,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     async function loadProducts() {
       const { data: products, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, title, price, category, stock')
         .order('created_at', { ascending: false });
 
       const tbody = document.getElementById('products-table-body');

@@ -4,8 +4,9 @@ import { getSupabase } from '../../../../lib/supabase';
 
 const { id } = Astro.params;
 
+const FIELDS = 'id, title, price, description, image_url, category, stock, created_at';
 const supabase = getSupabase(Astro.cookies);
-const { data: product, error } = await supabase.from('products').select('*').eq('id', id).single();
+const { data: product, error } = await supabase.from('products').select(FIELDS).eq('id', id).single();
 
 if (error || !product) {
   return Astro.redirect('/admin/products');
@@ -44,13 +45,13 @@ if (error || !product) {
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-medium text-white/40">Stock</label>
-        <input type="number" id="stock" min="0" step="1" required class="input-glass" value={product.stock ?? 10} />
+        <label class="block text-xs font-medium text-white/40">Descripción</label>
+        <textarea id="description" rows="3" class="input-glass resize-none">{product.description}</textarea>
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-medium text-white/40">Descripción</label>
-        <textarea id="description" rows="3" class="input-glass resize-none">{product.description}</textarea>
+        <label class="block text-xs font-medium text-white/40">Stock</label>
+        <input type="number" id="stock" min="0" step="1" required class="input-glass" value={product.stock ?? 10} />
       </div>
 
       <div class="space-y-1.5">
@@ -101,8 +102,8 @@ if (error || !product) {
       const title = (document.getElementById('title') as HTMLInputElement).value;
       const price = parseFloat((document.getElementById('price') as HTMLInputElement).value);
       const category = (document.getElementById('category') as HTMLSelectElement).value;
-      const stock = parseInt((document.getElementById('stock') as HTMLInputElement).value) || 10;
       const description = (document.getElementById('description') as HTMLTextAreaElement).value;
+      const stock = parseInt((document.getElementById('stock') as HTMLInputElement).value, 10) || 0;
       const imageFile = (document.getElementById('image') as HTMLInputElement).files?.[0];
       let imageUrl = (document.getElementById('current-image-url') as HTMLInputElement).value || null;
 
@@ -127,7 +128,7 @@ if (error || !product) {
       }
 
       const { error: updateError } = await supabase.from('products').update({
-        title, price, category, stock, description, image_url: imageUrl
+        title, price, category, description, stock, image_url: imageUrl
       }).eq('id', id);
 
       if (updateError) {

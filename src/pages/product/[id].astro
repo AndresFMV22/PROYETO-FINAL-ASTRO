@@ -5,27 +5,29 @@ import { getSupabase } from '../../lib/supabase';
 
 const { id } = Astro.params;
 
+const FIELDS = 'id, title, price, description, image_url, category, stock, created_at';
+
 const supabase = getSupabase(Astro.cookies);
-const { data: product } = await supabase.from('products').select('*').eq('id', id).single();
+const { data: product } = await supabase.from('products').select(FIELDS).eq('id', id).single();
 
 if (!product) return Astro.redirect('/404');
 
 const { data: related } = await supabase
   .from('products')
-  .select('*')
+  .select(FIELDS)
   .eq('category', product.category)
   .neq('id', product.id)
   .limit(4);
 
-const stock = product.stock ?? Math.floor(Math.random() * 15) + 1;
-const lowStock = stock <= 3;
-const outOfStock = stock === 0;
+const dbStock = product.stock ?? Math.floor(Math.random() * 15) + 1;
+const lowStock = dbStock <= 3;
+const outOfStock = dbStock === 0;
 const outOfStockAttr = outOfStock;
 
 ---
 
 <Layout title={product.title}>
-  <div class="max-w-5xl mx-auto py-8 animate-fade-in">
+    <div id="product-root" data-product-id={product.id} class="max-w-5xl mx-auto py-8 animate-fade-in">
     <a href="/" class="btn-glass px-3.5 py-1.5 rounded-lg text-xs inline-flex items-center gap-1.5 mb-6 transition-all">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Volver al catalogo
@@ -53,17 +55,17 @@ const outOfStockAttr = outOfStock;
               class:list={[
                 outOfStock ? 'bg-red-500/15 text-red-400 border border-red-500/20' : lowStock ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20' : 'bg-green-500/15 text-green-400 border border-green-500/20'
               ]}>
-              {outOfStock ? 'Agotado' : lowStock ? `Quedan ${stock}` : 'En stock'}
+              {outOfStock ? 'Agotado' : lowStock ? `Quedan ${dbStock}` : 'En stock'}
             </span>
           </div>
 
           <div id="rating-display" class="flex items-center gap-2 mb-3"></div>
 
-          <h1 id="product-title" data-id="{product.id}" class="text-2xl md:text-4xl font-bold text-white/90 tracking-tight mb-3 leading-tight">
+          <h1 id="product-title" data-id={product.id} class="text-2xl md:text-4xl font-bold text-white/90 tracking-tight mb-3 leading-tight">
             {product.title}
           </h1>
 
-          <p id="product-price" class="text-3xl md:text-4xl font-bold text-gradient-primary mb-6">
+          <p id="product-price" data-price={product.price} class="text-3xl md:text-4xl font-bold text-gradient-primary mb-6">
             ${parseFloat(product.price).toFixed(2)}
           </p>
 
@@ -73,7 +75,7 @@ const outOfStockAttr = outOfStock;
             </p>
           </div>
 
-          <button id="add-to-cart-btn" class="btn-primary py-3 px-6 rounded-lg font-medium text-sm shadow-lg transition-all hover:-translate-y-0.5 w-full md:w-auto flex items-center justify-center gap-2 active:scale-95 disabled:opacity-40 disabled:hover:translate-y-0">
+          <button id="add-to-cart-btn" data-out-of-stock={outOfStockAttr} data-stock={dbStock} class="btn-primary py-3 px-6 rounded-lg font-medium text-sm shadow-lg transition-all hover:-translate-y-0.5 w-full md:w-auto flex items-center justify-center gap-2 active:scale-95 disabled:opacity-40 disabled:hover:translate-y-0">
             <svg id="cart-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
             <span id="btn-text">{outOfStock ? 'Agotado' : 'Anadir al carrito'}</span>
           </button>
@@ -112,141 +114,269 @@ const outOfStockAttr = outOfStock;
   </div>
 
   <script>
-    import { addItem } from '../../lib/cart';
+    import { addItem, getItems } from '../../lib/cart';
     import { toggleItem, isInWishlist } from '../../lib/wishlist';
     import { addReview, getReviewsForProduct, getAverageRating } from '../../lib/reviews';
     import { getSession } from '../../lib/auth';
 
-    const titleEl = document.getElementById('product-title');
-    const priceEl = document.getElementById('product-price');
-    const imgEl = document.getElementById('product-img');
-    const productId = titleEl.dataset.id;
-    const productPrice = parseFloat(priceEl.textContent.replace('$', ''));
-    const isOutOfStock = {outOfStockAttr};
-    const productTitle = titleEl.textContent.trim();
-    const productImage = imgEl?.getAttribute('src') || '';
-    const productCategory = document.querySelector('.tag')?.textContent.trim() || '';
+    // --- Diagnostico y migracion de datos viejos ---
+    try {
+      const rawCart = localStorage.getItem('liquidsky-cart');
+      const rawReviews = localStorage.getItem('liquidsky-reviews');
+      const ver = localStorage.getItem('liquidsky-version');
+      console.log('[Diag] Cart localStorage:', rawCart);
+      console.log('[Diag] Reviews localStorage:', rawReviews);
+      console.log('[Diag] Version:', ver);
+      // Migracion unica: purgar registros corruptos
+      function isRealUuid(v: any): boolean {
+        return typeof v === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
+      }
+      if (ver !== '2') {
+        // Reviews: eliminar las que tengan productId invalido (incluye el string literal "{product.id}")
+        if (rawReviews) {
+          try {
+            const parsed = JSON.parse(rawReviews);
+            const clean = parsed.filter((r: any) => r && isRealUuid(r.productId));
+            if (clean.length !== parsed.length) {
+              localStorage.setItem('liquidsky-reviews', JSON.stringify(clean));
+              console.log('[Diag] Migracion: limpiadas', parsed.length - clean.length, 'resenas corruptas');
+            }
+          } catch {}
+        }
+        // Cart: eliminar items con ID invalido (incluye el string literal "{product.id}")
+        if (rawCart) {
+          try {
+            const parsed = JSON.parse(rawCart);
+            const clean = parsed.filter((i: any) => i && isRealUuid(i.id));
+            if (clean.length !== parsed.length) {
+              localStorage.setItem('liquidsky-cart', JSON.stringify(clean));
+              console.log('[Diag] Migracion: limpiados', parsed.length - clean.length, 'items corruptos');
+            }
+          } catch {}
+        }
+        localStorage.setItem('liquidsky-version', '2');
+        console.log('[Diag] Migracion completa a version 2');
+      }
+    } catch (_) {}
 
     let selectedStar = 0;
+    let productId = '';
+    let productPrice = 0;
+    let productTitle = '';
+    let productImage = '';
+    let productCategory = '';
 
-    // Star selector UI
-    const starEl = document.getElementById('star-selector');
-    if (starEl) {
-      for (let i = 1; i <= 5; i++) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'review-star text-white/20 hover:text-amber-400 transition-colors text-lg';
-        btn.textContent = '\u2605';
-        btn.dataset.val = i.toString();
-        btn.onclick = () => {
-          selectedStar = i;
-          starEl.querySelectorAll('.review-star').forEach((s, idx) => {
-            (s as HTMLElement).style.color = idx < i ? '#fbbf24' : 'rgba(255,255,255,0.2)';
-          });
-        };
-        starEl.appendChild(btn);
-      }
+    function isUuid(v: string): boolean {
+      return /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
     }
 
-    // Wishlist
-    const wishlistBtn = document.getElementById('wishlist-btn');
-    const wishlistIcon = document.getElementById('wishlist-icon');
-    if (isInWishlist(productId)) {
-      wishlistIcon?.setAttribute('fill', '#ec4899');
-      wishlistIcon?.setAttribute('stroke', '#ec4899');
-    }
-    wishlistBtn?.addEventListener('click', () => {
-      toggleItem({ id: productId, title: productTitle, price: productPrice, imageUrl: productImage, category: productCategory });
-      const inWishlist = isInWishlist(productId);
-      if (inWishlist) {
-        wishlistIcon?.setAttribute('fill', '#ec4899');
-        wishlistIcon?.setAttribute('stroke', '#ec4899');
-      } else {
-        wishlistIcon?.setAttribute('fill', 'none');
-        wishlistIcon?.setAttribute('stroke', 'rgba(255,255,255,0.5)');
-      }
-    });
-
-    // Add to cart
-    const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
-    const btnText = document.getElementById('btn-text');
-    const cartIcon = document.getElementById('cart-icon');
-
-    if (!isOutOfStock) {
-      btn?.addEventListener('click', () => {
-        addItem({ id: productId, title: productTitle, price: productPrice, imageUrl: productImage || null });
-        if (btnText) btnText.textContent = '¡Agregado!';
-        if (cartIcon) { cartIcon.innerHTML = '<path d="M20 6 9 17l-5-5"/>'; cartIcon.style.stroke = '#22c55e'; }
-        btn.classList.add('!bg-green-500/20', '!border-green-500/30', '!text-green-400');
-        setTimeout(() => {
-          if (btnText) btnText.textContent = 'Anadir al carrito';
-          if (cartIcon) { cartIcon.innerHTML = '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>'; cartIcon.style.stroke = ''; }
-          btn.classList.remove('!bg-green-500/20', '!border-green-500/30', '!text-green-400');
-        }, 1500);
-      });
-    } else {
-      btn.disabled = true;
+    function getProductId(): string {
+      try {
+        const titleEl = document.getElementById('product-title');
+        if (titleEl?.dataset?.id && isUuid(titleEl.dataset.id)) return titleEl.dataset.id;
+        const rootEl = document.getElementById('product-root');
+        if (rootEl?.dataset?.productId && isUuid(rootEl.dataset.productId)) return rootEl.dataset.productId;
+        const match = window.location.pathname.match(/\/product\/([a-f0-9-]+)/i);
+        if (match && isUuid(match[1])) return match[1];
+        return '';
+      } catch { return ''; }
     }
 
-    // Rating display
     function renderRating() {
-      const { average, count } = getAverageRating(productId);
-      const display = document.getElementById('rating-display');
-      if (display) {
-        const full = Math.round(average);
-        const stars = Array.from({length: 5}, (_, i) =>
-          `<span class="text-sm ${i < full ? 'text-amber-400' : 'text-white/15'}">\u2605</span>`
-        ).join('');
-        const text = count > 0 ? `<span class="text-xs text-white/30">(${count} ${count === 1 ? 'resena' : 'resenas'})</span>` : '';
-        display.innerHTML = stars + text;
+      try {
+        const pid = getProductId();
+        if (!pid) return;
+        const { average, count } = getAverageRating(pid);
+        const display = document.getElementById('rating-display');
+        if (display) {
+          const full = Math.round(average);
+          const stars = Array.from({length: 5}, (_, i) =>
+            `<span class="text-sm ${i < full ? 'text-amber-400' : 'text-white/15'}">\u2605</span>`
+          ).join('');
+          const text = count > 0 ? `<span class="text-xs text-white/30">(${count} ${count === 1 ? 'resena' : 'resenas'})</span>` : '';
+          display.innerHTML = stars + text;
+        }
+      } catch (e) {
+        console.error('[LiquidSky] Error en renderRating:', e);
       }
     }
 
-    // Submit review
+    function loadReviews() {
+      try {
+        const pid = getProductId();
+        if (!pid) return;
+        const reviews = getReviewsForProduct(pid);
+        const list = document.getElementById('reviews-list');
+        if (!list) return;
+        if (reviews.length === 0) {
+          list.innerHTML = '<p class="text-white/20 text-sm text-center py-4">No hay resenas aun. Se el primero en opinar.</p>';
+          return;
+        }
+        list.innerHTML = reviews.map(r => {
+          const date = new Date(r.date);
+          const stars = Array.from({length: 5}, (_, i) =>
+            `<span class="text-xs ${i < r.rating ? 'text-amber-400' : 'text-white/10'}">\u2605</span>`
+          ).join('');
+          return `
+            <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-medium text-white/70">${r.userName}</span>
+                <span class="text-[10px] text-white/20">${date.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span>
+              </div>
+              <div class="flex gap-0.5 mb-2">${stars}</div>
+              <p class="text-sm text-white/50">${r.comment}</p>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('[LiquidSky] Error al cargar resenas:', e);
+      }
+    }
+
+    // Submit review (lee productId del DOM cada vez)
     (window as any).submitReview = () => {
-      const session = getSession();
-      if (selectedStar === 0) return;
+      const pid = getProductId();
+      if (!pid) { console.error('[LiquidSky] No se encontro productId'); return; }
+      const msg = document.getElementById('review-msg');
+      if (selectedStar === 0) {
+        if (msg) { msg.textContent = 'Selecciona una calificacion'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 2000); }
+        return;
+      }
       const comment = (document.getElementById('review-comment') as HTMLTextAreaElement).value.trim();
-      if (!comment) return;
+      if (!comment) {
+        if (msg) { msg.textContent = 'Escribe un comentario'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 2000); }
+        return;
+      }
+      const session = getSession();
       const userName = session ? session.name : 'Usuario';
-      addReview(productId, session?.id || 'guest', userName, selectedStar, comment);
+      try {
+        addReview(pid, session?.id || 'guest', userName, selectedStar, comment);
+      } catch (e) {
+        console.error('[LiquidSky] Error al enviar resena:', e);
+        if (msg) { msg.textContent = 'Error al enviar la resena, intenta de nuevo'; msg.className = 'text-xs mt-2 text-red-400'; msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 3000); }
+        return;
+      }
       (document.getElementById('review-comment') as HTMLTextAreaElement).value = '';
       selectedStar = 0;
       document.querySelectorAll('.review-star').forEach(s => (s as HTMLElement).style.color = 'rgba(255,255,255,0.2)');
-      const msg = document.getElementById('review-msg');
       if (msg) { msg.textContent = 'Resena enviada'; msg.className = 'text-xs mt-2 text-green-400'; msg.classList.remove('hidden'); }
       setTimeout(() => { if (msg) msg.classList.add('hidden'); }, 2000);
       loadReviews();
       renderRating();
     };
 
-    // Load reviews
-    function loadReviews() {
-      const reviews = getReviewsForProduct(productId);
-      const list = document.getElementById('reviews-list');
-      if (!list) return;
-      if (reviews.length === 0) {
-        list.innerHTML = '<p class="text-white/20 text-sm text-center py-4">No hay resenas aun. Se el primero en opinar.</p>';
-        return;
+    // --- Stars ---
+    try {
+      const starEl = document.getElementById('star-selector');
+      if (starEl) {
+        for (let i = 1; i <= 5; i++) {
+          const starBtn = document.createElement('button');
+          starBtn.type = 'button';
+          starBtn.className = 'review-star text-amber-400/40 hover:text-amber-400 transition-colors text-xl leading-none';
+          starBtn.textContent = '\u2605';
+          starBtn.dataset.val = i.toString();
+          starBtn.onclick = () => {
+            selectedStar = i;
+            starEl.querySelectorAll('.review-star').forEach((s, idx) => {
+              (s as HTMLElement).style.color = idx < i ? '#fbbf24' : 'rgba(255,255,255,0.2)';
+            });
+          };
+          starEl.appendChild(starBtn);
+        }
       }
-      list.innerHTML = reviews.map(r => {
-        const date = new Date(r.date);
-        const stars = Array.from({length: 5}, (_, i) =>
-          `<span class="text-xs ${i < r.rating ? 'text-amber-400' : 'text-white/10'}">\u2605</span>`
-        ).join('');
-        return `
-          <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-sm font-medium text-white/70">${r.userName}</span>
-              <span class="text-[10px] text-white/20">${date.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span>
-            </div>
-            <div class="flex gap-0.5 mb-2">${stars}</div>
-            <p class="text-sm text-white/50">${r.comment}</p>
-          </div>
-        `;
-      }).join('');
+    } catch (e) {
+      console.error('[LiquidSky] Error creando estrellas:', e);
     }
 
+    // --- Leer datos del DOM ---
+    try {
+      const titleEl = document.getElementById('product-title');
+      const priceEl = document.getElementById('product-price');
+      const imgEl = document.getElementById('product-img');
+      if (titleEl && priceEl) {
+        const rootEl = document.getElementById('product-root');
+        const urlMatch = window.location.pathname.match(/\/product\/([a-f0-9-]+)/i);
+        productId = titleEl.dataset.id || rootEl?.dataset?.productId || (urlMatch ? urlMatch[1] : '') || '';
+        productPrice = parseFloat(priceEl.dataset.price || priceEl.textContent.replace('$', '') || '0');
+        productTitle = titleEl.textContent.trim();
+        productImage = imgEl?.getAttribute('src') || '';
+        productCategory = document.querySelector('.tag')?.textContent.trim() || '';
+        console.log('[LiquidSky] productId leido:', productId, '| desde DOM:', titleEl.dataset.id, '| desde URL:', urlMatch ? urlMatch[1] : 'N/A');
+      } else {
+        console.warn('[LiquidSky] titleEl o priceEl no encontrados');
+      }
+    } catch (e) {
+      console.error('[LiquidSky] Error leyendo datos del DOM:', e);
+    }
+
+    // --- Wishlist ---
+    try {
+      const wishlistBtn = document.getElementById('wishlist-btn');
+      const wishlistIcon = document.getElementById('wishlist-icon');
+      if (wishlistBtn && wishlistIcon && productId) {
+        if (isInWishlist(productId)) {
+          wishlistIcon.setAttribute('fill', '#ec4899');
+          wishlistIcon.setAttribute('stroke', '#ec4899');
+        }
+        wishlistBtn.addEventListener('click', () => {
+          toggleItem({ id: productId, title: productTitle, price: productPrice, imageUrl: productImage, category: productCategory });
+          if (isInWishlist(productId)) {
+            wishlistIcon.setAttribute('fill', '#ec4899');
+            wishlistIcon.setAttribute('stroke', '#ec4899');
+          } else {
+            wishlistIcon.setAttribute('fill', 'none');
+            wishlistIcon.setAttribute('stroke', 'rgba(255,255,255,0.5)');
+          }
+          dispatchEvent(new CustomEvent('wishlist-update'));
+        });
+      }
+    } catch (e) {
+      console.error('[LiquidSky] Error en wishlist:', e);
+    }
+
+    // --- Add to cart ---
+    try {
+      const cartBtn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+      const btnText = document.getElementById('btn-text');
+      const cartIcon = document.getElementById('cart-icon');
+
+      if (cartBtn && productId) {
+        const outOfStock = cartBtn.getAttribute('data-out-of-stock') === 'true';
+        if (!outOfStock) {
+          cartBtn.addEventListener('click', () => {
+            const maxStock = parseInt(cartBtn.getAttribute('data-stock') || '0', 10);
+            const currentItems = getItems();
+            const inCart = currentItems.find((i: any) => i.id === productId);
+            const currentQty = inCart ? inCart.quantity : 0;
+            if (currentQty >= maxStock) {
+              if (btnText) btnText.textContent = `Stock maximo: ${maxStock}`;
+              cartBtn.classList.add('!bg-amber-500/20', '!border-amber-500/30', '!text-amber-400');
+              setTimeout(() => {
+                if (btnText) btnText.textContent = 'Anadir al carrito';
+                cartBtn.classList.remove('!bg-amber-500/20', '!border-amber-500/30', '!text-amber-400');
+              }, 2000);
+              return;
+            }
+            console.log('[Cart] Click add. productId:', productId, 'title:', productTitle);
+            addItem({ id: productId, title: productTitle, price: productPrice, imageUrl: productImage || null });
+            if (btnText) btnText.textContent = '\u00a1Agregado!';
+            if (cartIcon) { cartIcon.innerHTML = '<path d="M20 6 9 17l-5-5"/>'; cartIcon.style.stroke = '#22c55e'; }
+            cartBtn.classList.add('!bg-green-500/20', '!border-green-500/30', '!text-green-400');
+            setTimeout(() => {
+              if (btnText) btnText.textContent = 'Anadir al carrito';
+              if (cartIcon) { cartIcon.innerHTML = '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>'; cartIcon.style.stroke = ''; }
+              cartBtn.classList.remove('!bg-green-500/20', '!border-green-500/30', '!text-green-400');
+            }, 1500);
+          });
+        } else {
+          cartBtn.disabled = true;
+        }
+      }
+    } catch (e) {
+      console.error('[LiquidSky] Error en carrito:', e);
+    }
+
+    // --- Rating & Reviews inicial ---
     renderRating();
     loadReviews();
   </script>

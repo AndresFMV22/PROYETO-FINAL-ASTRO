@@ -10,11 +10,20 @@ export interface Review {
 
 const KEY = 'liquidsky-reviews';
 
+function isUuid(v: string): boolean {
+  return /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
+}
+
 function getAll(): Review[] {
   if (typeof localStorage === 'undefined') return [];
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : [];
+    const reviews: Review[] = raw ? JSON.parse(raw) : [];
+    const valid = reviews.filter(r => isUuid(r.productId));
+    if (valid.length !== reviews.length) {
+      save(valid);
+    }
+    return valid;
   } catch { return []; }
 }
 
@@ -22,10 +31,22 @@ function save(reviews: Review[]): void {
   localStorage.setItem(KEY, JSON.stringify(reviews));
 }
 
+function generateId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+}
+
 export function addReview(productId: string, userId: string, userName: string, rating: number, comment: string): Review {
+  if (!isUuid(productId)) {
+    console.error('[Reviews] productId invalido:', productId);
+    throw new Error('ID de producto invalido');
+  }
   const reviews = getAll();
   const review: Review = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     productId,
     userId,
     userName,

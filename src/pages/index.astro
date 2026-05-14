@@ -11,8 +11,9 @@ const pageParam = parseInt(Astro.url.searchParams.get('page') || '1', 10);
 const page = Math.max(1, pageParam);
 const perPage = 8;
 
-let countQuery = supabase.from('products').select('*', { count: 'exact', head: true });
-let dataQuery = supabase.from('products').select('*').order('created_at', { ascending: false });
+const FIELDS = 'id, title, price, description, image_url, category, stock, created_at';
+let countQuery = supabase.from('products').select(FIELDS, { count: 'exact', head: true });
+let dataQuery = supabase.from('products').select(FIELDS).order('created_at', { ascending: false });
 
 if (categoryParam) {
   countQuery = countQuery.eq('category', categoryParam);
@@ -100,6 +101,7 @@ const categories = ['Electrónica', 'Ropa', 'Hogar', 'Deportes'];
               price={product.price}
               imageUrl={product.image_url}
               category={product.category}
+              stock={product.stock ?? 10}
             />
           </div>
         ))}

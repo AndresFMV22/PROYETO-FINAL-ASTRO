@@ -31,13 +31,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-medium text-white/40">Stock</label>
-        <input type="number" id="stock" min="0" step="1" required class="input-glass" placeholder="10" />
+        <label class="block text-xs font-medium text-white/40">Descripción</label>
+        <textarea id="description" rows="3" class="input-glass resize-none" placeholder="Describe las características del producto..."></textarea>
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-medium text-white/40">Descripción</label>
-        <textarea id="description" rows="3" class="input-glass resize-none" placeholder="Describe las características del producto..."></textarea>
+        <label class="block text-xs font-medium text-white/40">Stock</label>
+        <input type="number" id="stock" min="0" step="1" required class="input-glass" placeholder="Ej. 10" value="10" />
       </div>
 
       <div class="space-y-1.5">
@@ -81,9 +81,10 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       const title = (document.getElementById('title') as HTMLInputElement).value;
       const price = parseFloat((document.getElementById('price') as HTMLInputElement).value);
       const category = (document.getElementById('category') as HTMLSelectElement).value;
-      const stock = parseInt((document.getElementById('stock') as HTMLInputElement).value) || 10;
       const description = (document.getElementById('description') as HTMLTextAreaElement).value;
       const imageFile = (document.getElementById('image') as HTMLInputElement).files?.[0];
+
+      const stock = parseInt((document.getElementById('stock') as HTMLInputElement).value, 10) || 0;
 
       let imageUrl = null;
 
@@ -108,7 +109,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       }
 
       const { error: insertError } = await supabase.from('products').insert([
-        { title, price, category, stock, description, image_url: imageUrl }
+        { title, price, category, description, stock, image_url: imageUrl }
       ]);
 
       if (insertError) {
