@@ -22,8 +22,6 @@ const lowStock = stock <= 3;
 const outOfStock = stock === 0;
 const outOfStockAttr = outOfStock;
 
-const rawJson = JSON.stringify({ id: product.id, title: product.title, price: product.price, image_url: product.image_url, category: product.category });
-const safeJson = rawJson.replace(/[\\']/g, '\\$&');
 ---
 
 <Layout title={product.title}>
@@ -113,19 +111,21 @@ const safeJson = rawJson.replace(/[\\']/g, '\\$&');
     )}
   </div>
 
+  <script is:inline>window.__productData = {JSON.stringify({ id: product.id, title: product.title, price: product.price, image_url: product.image_url, category: product.category })};window.__isOutOfStock = {outOfStockAttr};</script>
+
   <script>
     import { addItem } from '../../lib/cart';
     import { toggleItem, isInWishlist } from '../../lib/wishlist';
     import { addReview, getReviewsForProduct, getAverageRating } from '../../lib/reviews';
     import { getSession } from '../../lib/auth';
 
-    const productData = JSON.parse('{safeJson}');
+    const productData = window.__productData;
     const productId = productData.id;
     const productTitle = productData.title;
     const productPrice = productData.price;
     const productImage = productData.image_url || '';
     const productCategory = productData.category;
-    const isOutOfStock = {outOfStockAttr};
+    const isOutOfStock = window.__isOutOfStock;
 
     let selectedStar = 0;
 
